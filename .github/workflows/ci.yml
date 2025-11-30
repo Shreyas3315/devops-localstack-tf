@@ -1,4 +1,4 @@
-name: CI - Terraform + Localstack
+name: CI - Terraform + Localstack + S3 Upload
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
 
 jobs:
   terraform:
-    name: Terraform Apply on Localstack
     runs-on: ubuntu-latest
 
     steps:
@@ -57,17 +56,17 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
+      - name: Create test artifact
+        run: echo "Hello LocalStack S3!" > artifact.txt
+
       - name: Upload artifact to LocalStack S3
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          # Make bucket (ignore if exists)
           aws --endpoint-url=http://localhost:4566 s3 mb s3://my-localstack-bucket || true
-          
-          # Upload artifact (ensure path is correct)
-          aws --endpoint-url=http://localhost:4566 s3 cp ./path/to/your/artifact.zip s3://my-localstack-bucket/artifact.zip
+          aws --endpoint-url=http://localhost:4566 s3 cp artifact.txt s3://my-localstack-bucket/artifact.txt
 
       - name: List S3 bucket contents
         env:
