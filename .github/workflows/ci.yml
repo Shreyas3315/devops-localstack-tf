@@ -1,62 +1,61 @@
-name : CI - Terraform + Localstack
+name: CI - Terraform + Localstack
 
-on: 
-  push: 
+on:
+  push:
     branches: [ "main" ]
   pull_request:
 
 jobs:
   terraform:
     name: Terraform Apply on Localstack
-    runs-on: ubuntu:latest  
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with: 
+        with:
           terraform_version: 1.7.5
           terraform_wrapper: false
+
       - name: Start Localstack
         working-directory: ./localstack
-        run: |
-          docker compose up -d
+        run: docker compose up -d
+
       - name: Wait for Localstack
-        shell: pwsh
         run: |
-          Write-Host "Waiting for LocalStack to be ready..."
-          $retry=0
-          while ($retry -lt 30) {
-            try {
-              $health = Invoke-RestMethod -Uri "http://localhost:4566/health"
-              if ($health.running -eq $true) {
-                Write-Host "LocalStack is ready."
-                break
-              }
-            } catch {
-              Write-Host "LocalStack not ready yet, waiting 5s..."
-            }
-            Start-Sleep -Seconds 5
-            $retry++
-          }
+          echo "Waiting for LocalStack to be ready..."
+          retry=0
+          until [ $retry -ge 30 ]
+          do
+            health=$(curl -s http://localhost:4566/health | jq -r '.running')
+            if [ "$health" = "true" ]; then
+              echo "LocalStack is ready."
+              break
+            fi
+            echo "LocalStack not ready yet, waiting 5s..."
+            sleep 5
+            retry=$((retry+1))
+          done
+
       - name: Terraform Init
         working-directory: ./terraform
-        shell: pwsh
         run: terraform init
+
       - name: Terraform Validate
         working-directory: ./terraform
-        shell: pwsh
         run: terraform validate
+
       - name: Terraform Plan
         working-directory: ./terraform
-        shell: pwsh
         run: terraform plan
+
       - name: Terraform Apply
         working-directory: ./terraform
-        shell: pwsh
-        run: terraform apply
+        run: terraform apply -auto-approve
+
       - name: Stop Localstack
         working-directory: ./localstack
-        shell: pwsh
-        run: docker-compose down
-      
+        run: docker compose down
