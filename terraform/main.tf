@@ -16,6 +16,11 @@ resource "aws_iam_user" "ci_user" {
   name = "ci-user"
 }
 
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-localstack-bucket"
+  force_destroy = true
+}
+
 resource "aws_iam_access_key" "ci_user_key" {
   user = aws_iam_user.ci_user.name
 }

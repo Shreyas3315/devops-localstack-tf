@@ -56,6 +56,15 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform
         run: terraform apply -auto-approve
+        
+      - name: Upload artifact to LocalStack S3
+        run: |
+          aws --endpoint-url=http://localhost:4566 s3 mb s3://my-localstack-bucket || true
+          aws --endpoint-url=http://localhost:4566 s3 cp ./artifact.zip s3://my-localstack-bucket/artifact.zip
+
+      - name: List S3 bucket contents
+        run: |
+          aws --endpoint-url=http://localhost:4566 s3 ls s3://my-localstack-bucket
 
       - name: Stop Localstack
         working-directory: ./localstack
