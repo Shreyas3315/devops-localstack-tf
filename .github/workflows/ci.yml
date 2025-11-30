@@ -30,8 +30,9 @@ jobs:
           retry=0
           until [ $retry -ge 30 ]
           do
-            health=$(curl -s http://localhost:4566/health | jq -r '.running')
-            if [ "$health" = "true" ]; then
+            health=$(curl -s http://localhost:4566/health || echo "")
+            running=$(echo "$health" | jq -r '.running' 2>/dev/null || echo "false")
+            if [ "$running" = "true" ]; then
               echo "LocalStack is ready."
               break
             fi
